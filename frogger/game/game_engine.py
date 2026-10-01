@@ -23,7 +23,10 @@ LANE_SPEEDS = [1.5, -2, 2, -2.5, 1.5, -2]   # one entry per road row, alternatin
 
 
 class GameEngine:
+
     def __init__(self):
+        self.lives = 3
+        self.game_over = False
         self._build_entities()
 
     def _build_entities(self):
@@ -63,6 +66,8 @@ class GameEngine:
                                               height=CELL_SIZE - 8, speed=speed))
 
     def handle_keydown(self, key):
+        if self.game_over:
+            return
         if key == pygame.K_UP:
             self.frog.move(0, -1)
         elif key == pygame.K_DOWN:
@@ -72,6 +77,8 @@ class GameEngine:
         elif key == pygame.K_RIGHT:
             self.frog.move(1, 0)
         elif key == pygame.K_r:
+            self.lives = 3
+            self.game_over = False
             self._build_entities()
 
     def update(self):
@@ -79,12 +86,33 @@ class GameEngine:
             v.update(road_width_px=WIDTH)
 
         if check_collision(self.frog, self.vehicles):
+            self.lives -= 1
             self.frog.reset()
+
+            if self.lives <= 0:
+                self.game_over = True
 
         if self.frog.row == GOAL_ROW:
             self.frog.reset()
 
     def draw(self, surface, font):
         from game import renderer
+
         renderer.draw_scene(surface, self.frog, self.vehicles)
-        renderer.draw_text(surface, font, "Arrow keys to move. R to restart.", (10, HEIGHT - 24))
+
+        renderer.draw_text(
+            surface,
+            font,
+            f"Lives: {self.lives}",
+            (10, 10)
+        )
+
+        renderer.draw_text(
+            surface,
+            font,
+            "Arrow keys to move. R to restart.",
+            (10, HEIGHT - 24)
+        )
+
+        if self.game_over:
+            renderer.draw_banner(surface, font, "GAME OVER - Press R to restart")
